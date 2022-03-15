@@ -7,6 +7,10 @@ import functools
 import os
 import sys
 
+if os.environ['SYSTEM'] == 'spaces':
+    os.system("sed -i '14,21d' StyleSwin/op/fused_act.py")
+    os.system("sed -i '12,19d' StyleSwin/op/upfirdn2d.py")
+
 sys.path.insert(0, 'StyleSwin')
 
 import gradio as gr
