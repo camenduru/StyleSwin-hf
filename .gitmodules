@@ -1,0 +1,3 @@
+[submodule "StyleSwin"]
+	path = StyleSwin
+	url = https://github.com/microsoft/StyleSwin
