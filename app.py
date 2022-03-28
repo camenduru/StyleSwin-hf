@@ -7,7 +7,7 @@ import functools
 import os
 import sys
 
-if os.environ['SYSTEM'] == 'spaces':
+if os.environ.get('SYSTEM') == 'spaces':
     os.system("sed -i '14,21d' StyleSwin/op/fused_act.py")
     os.system("sed -i '12,19d' StyleSwin/op/upfirdn2d.py")
 
