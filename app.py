@@ -21,6 +21,11 @@ import torch
 import torch.nn as nn
 from models.generator import Generator
 
+REPO_URL = 'https://github.com/microsoft/StyleSwin'
+TITLE = 'microsoft/StyleSwin'
+DESCRIPTION = f'A demo for {REPO_URL}'
+ARTICLE = None
+
 TOKEN = os.environ['TOKEN']
 
 MODEL_REPO = 'hysts/StyleSwin'
@@ -105,11 +110,6 @@ def main():
                              device=device)
     func = functools.update_wrapper(func, generate_image)
 
-    repo_url = 'https://github.com/microsoft/StyleSwin'
-    title = 'microsoft/StyleSwin'
-    description = f'A demo for {repo_url}'
-    article = None
-
     gr.Interface(
         func,
         [
@@ -121,10 +121,10 @@ def main():
             gr.inputs.Slider(0, 2147483647, step=1, default=0, label='Seed'),
         ],
         gr.outputs.Image(type='pil', label='Output'),
+        title=TITLE,
+        description=DESCRIPTION,
+        article=ARTICLE,
         theme=args.theme,
-        title=title,
-        description=description,
-        article=article,
         allow_screenshot=args.allow_screenshot,
         allow_flagging=args.allow_flagging,
         live=args.live,
