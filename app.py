@@ -116,7 +116,7 @@ def main():
             gr.inputs.Radio(MODEL_NAMES,
                             type='value',
                             default='FFHQ_256',
-                            label='model',
+                            label='Model',
                             optional=False),
             gr.inputs.Slider(0, 2147483647, step=1, default=0, label='Seed'),
         ],
