@@ -24,7 +24,21 @@ from models.generator import Generator
 REPO_URL = 'https://github.com/microsoft/StyleSwin'
 TITLE = 'microsoft/StyleSwin'
 DESCRIPTION = f'A demo for {REPO_URL}'
-ARTICLE = None
+SAMPLE_IMAGE_DIR = 'https://huggingface.co/spaces/hysts/StyleSwin/resolve/main/samples'
+ARTICLE = f'''## Generated images
+### CelebA-HQ
+- size: 1024x1024
+- seed: 0-99
+![CelebA-HQ samples]({SAMPLE_IMAGE_DIR}/celeba-hq.jpg)
+### FFHQ
+- size: 1024x1024
+- seed: 0-99
+![FFHQ samples]({SAMPLE_IMAGE_DIR}/ffhq.jpg)
+### LSUN Church
+- size: 256x256
+- seed: 0-99
+![LSUN Church samples]({SAMPLE_IMAGE_DIR}/lsun-church.jpg)
+'''
 
 TOKEN = os.environ['TOKEN']
 
