@@ -7,23 +7,26 @@ import functools
 import os
 import sys
 
-if os.environ.get('SYSTEM') == 'spaces':
-    os.system("sed -i '14,21d' StyleSwin/op/fused_act.py")
-    os.system("sed -i '12,19d' StyleSwin/op/upfirdn2d.py")
-
-sys.path.insert(0, 'StyleSwin')
-
 import gradio as gr
 import huggingface_hub
 import numpy as np
 import PIL.Image
 import torch
 import torch.nn as nn
+
+if os.environ.get('SYSTEM') == 'spaces':
+    os.system("sed -i '14,21d' StyleSwin/op/fused_act.py")
+    os.system("sed -i '12,19d' StyleSwin/op/upfirdn2d.py")
+
+sys.path.insert(0, 'StyleSwin')
+
 from models.generator import Generator
 
-REPO_URL = 'https://github.com/microsoft/StyleSwin'
 TITLE = 'microsoft/StyleSwin'
-DESCRIPTION = f'A demo for {REPO_URL}'
+DESCRIPTION = '''This is an unofficial demo for https://github.com/microsoft/StyleSwin.
+
+Expected execution time on Hugging Face Spaces: 3s (for 256x256 images), 7s (for 1024x1024 images)
+'''
 SAMPLE_IMAGE_DIR = 'https://huggingface.co/spaces/hysts/StyleSwin/resolve/main/samples'
 ARTICLE = f'''## Generated images
 ### CelebA-HQ
@@ -38,6 +41,8 @@ ARTICLE = f'''## Generated images
 - size: 256x256
 - seed: 0-99
 ![LSUN Church samples]({SAMPLE_IMAGE_DIR}/lsun-church.jpg)
+
+<center><img src="https://visitor-badge.glitch.me/badge?page_id=hysts.styleswin" alt="visitor badge"/></center>
 '''
 
 TOKEN = os.environ['TOKEN']
