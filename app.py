@@ -3,149 +3,107 @@
 from __future__ import annotations
 
 import argparse
-import functools
-import os
-import sys
 
 import gradio as gr
-import huggingface_hub
 import numpy as np
-import PIL.Image
-import torch
-import torch.nn as nn
 
-if os.environ.get('SYSTEM') == 'spaces':
-    os.system("sed -i '14,21d' StyleSwin/op/fused_act.py")
-    os.system("sed -i '12,19d' StyleSwin/op/upfirdn2d.py")
+from model import Model
 
-sys.path.insert(0, 'StyleSwin')
-
-from models.generator import Generator
-
-TITLE = 'microsoft/StyleSwin'
-DESCRIPTION = '''This is an unofficial demo for https://github.com/microsoft/StyleSwin.
+TITLE = '# microsoft/StyleSwin'
+DESCRIPTION = '''This is an unofficial demo for [https://github.com/microsoft/StyleSwin](https://github.com/microsoft/StyleSwin).
 
 Expected execution time on Hugging Face Spaces: 3s (for 256x256 images), 7s (for 1024x1024 images)
 '''
-SAMPLE_IMAGE_DIR = 'https://huggingface.co/spaces/hysts/StyleSwin/resolve/main/samples'
-ARTICLE = f'''## Generated images
-### CelebA-HQ
-- size: 1024x1024
-- seed: 0-99
-![CelebA-HQ samples]({SAMPLE_IMAGE_DIR}/celeba-hq.jpg)
-### FFHQ
-- size: 1024x1024
-- seed: 0-99
-![FFHQ samples]({SAMPLE_IMAGE_DIR}/ffhq.jpg)
-### LSUN Church
-- size: 256x256
-- seed: 0-99
-![LSUN Church samples]({SAMPLE_IMAGE_DIR}/lsun-church.jpg)
-
-<center><img src="https://visitor-badge.glitch.me/badge?page_id=hysts.styleswin" alt="visitor badge"/></center>
-'''
-
-TOKEN = os.environ['TOKEN']
-
-MODEL_REPO = 'hysts/StyleSwin'
-MODEL_NAMES = [
-    'CelebAHQ_256',
-    'FFHQ_256',
-    'LSUNChurch_256',
-    'CelebAHQ_1024',
-    'FFHQ_1024',
-]
+FOOTER = '<img id="visitor-badge" src="https://visitor-badge.glitch.me/badge?page_id=hysts.styleswin" alt="visitor badge" />'
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument('--device', type=str, default='cpu')
     parser.add_argument('--theme', type=str)
-    parser.add_argument('--live', action='store_true')
     parser.add_argument('--share', action='store_true')
     parser.add_argument('--port', type=int)
     parser.add_argument('--disable-queue',
                         dest='enable_queue',
                         action='store_false')
-    parser.add_argument('--allow-flagging', type=str, default='never')
     return parser.parse_args()
 
 
-def load_model(model_name: str, device: torch.device) -> nn.Module:
-    size = int(model_name.split('_')[1])
-    channel_multiplier = 1 if size == 1024 else 2
-    model = Generator(size,
-                      style_dim=512,
-                      n_mlp=8,
-                      channel_multiplier=channel_multiplier)
-    ckpt_path = huggingface_hub.hf_hub_download(MODEL_REPO,
-                                                f'models/{model_name}.pt',
-                                                use_auth_token=TOKEN)
-    ckpt = torch.load(ckpt_path)
-    model.load_state_dict(ckpt['g_ema'])
-    model.to(device)
-    model.eval()
-    return model
+def get_sample_image_url(name: str) -> str:
+    sample_image_dir = 'https://huggingface.co/spaces/hysts/StyleSwin/resolve/main/samples'
+    return f'{sample_image_dir}/{name}.jpg'
 
 
-def generate_z(seed: int, device: torch.device) -> torch.Tensor:
-    return torch.from_numpy(np.random.RandomState(seed).randn(
-        1, 512)).to(device).float()
-
-
-def postprocess(tensors: torch.Tensor) -> torch.Tensor:
-    assert tensors.dim() == 4
-    tensors = tensors.cpu()
-    std = torch.FloatTensor([0.229, 0.224, 0.225])[None, :, None, None]
-    mean = torch.FloatTensor([0.485, 0.456, 0.406])[None, :, None, None]
-    tensors = tensors * std + mean
-    tensors = (tensors * 255).clamp(0, 255).to(torch.uint8)
-    return tensors
-
-
-@torch.inference_mode()
-def generate_image(model_name: str, seed: int, model_dict: dict,
-                   device: torch.device) -> PIL.Image.Image:
-    model = model_dict[model_name]
-    seed = int(np.clip(seed, 0, np.iinfo(np.uint32).max))
-    z = generate_z(seed, device)
-    out, _ = model(z)
-    out = postprocess(out)
-    out = out.numpy()[0].transpose(1, 2, 0)
-    return PIL.Image.fromarray(out, 'RGB')
+def get_sample_image_markdown(name: str) -> str:
+    url = get_sample_image_url(name)
+    if name == 'celeba-hq':
+        size = 1024
+    elif name == 'ffhq':
+        size = 1024
+    elif name == 'lsun-church':
+        size = 256
+    else:
+        raise ValueError
+    seed = '0-99'
+    return f'''
+    - size: {size}x{size}
+    - seed: {seed}
+    ![sample images]({url})'''
 
 
 def main():
-    gr.close_all()
-
     args = parse_args()
-    device = torch.device(args.device)
+    model = Model(args.device)
 
-    model_dict = {name: load_model(name, device) for name in MODEL_NAMES}
+    with gr.Blocks(theme=args.theme, css='style.css') as demo:
+        gr.Markdown(TITLE)
+        gr.Markdown(DESCRIPTION)
 
-    func = functools.partial(generate_image,
-                             model_dict=model_dict,
-                             device=device)
-    func = functools.update_wrapper(func, generate_image)
+        with gr.Tabs():
+            with gr.TabItem('App'):
+                with gr.Row():
+                    with gr.Column():
+                        with gr.Group():
+                            model_name = gr.Dropdown(
+                                model.MODEL_NAMES,
+                                value=model.MODEL_NAMES[3],
+                                label='Model')
+                            seed = gr.Slider(0,
+                                             np.iinfo(np.uint32).max,
+                                             step=1,
+                                             value=0,
+                                             label='Seed')
+                            run_button = gr.Button('Run')
+                    with gr.Column():
+                        result = gr.Image(label='Result', elem_id='result')
 
-    gr.Interface(
-        func,
-        [
-            gr.inputs.Radio(MODEL_NAMES,
-                            type='value',
-                            default='FFHQ_256',
-                            label='Model',
-                            optional=False),
-            gr.inputs.Slider(0, 2147483647, step=1, default=0, label='Seed'),
-        ],
-        gr.outputs.Image(type='pil', label='Output'),
-        title=TITLE,
-        description=DESCRIPTION,
-        article=ARTICLE,
-        theme=args.theme,
-        allow_flagging=args.allow_flagging,
-        live=args.live,
-    ).launch(
+            with gr.TabItem('Sample Images'):
+                with gr.Row():
+                    model_name2 = gr.Dropdown([
+                        'celeba-hq',
+                        'ffhq',
+                        'lsun-church',
+                    ],
+                                              value='celeba-hq',
+                                              label='Model')
+                with gr.Row():
+                    text = get_sample_image_markdown(model_name2.value)
+                    sample_images = gr.Markdown(text)
+
+        gr.Markdown(FOOTER)
+
+        model_name.change(fn=model.set_model, inputs=model_name, outputs=None)
+        run_button.click(fn=model.set_model_and_generate_image,
+                         inputs=[
+                             model_name,
+                             seed,
+                         ],
+                         outputs=result)
+        model_name2.change(fn=get_sample_image_markdown,
+                           inputs=model_name2,
+                           outputs=sample_images)
+
+    demo.launch(
         enable_queue=args.enable_queue,
         server_port=args.port,
         share=args.share,
