@@ -6,11 +6,10 @@ import sys
 
 import huggingface_hub
 import numpy as np
-import PIL.Image
 import torch
 import torch.nn as nn
 
-if os.environ.get('SYSTEM') == 'spaces':
+if os.getenv('SYSTEM') == 'spaces':
     os.system("sed -i '14,21d' StyleSwin/op/fused_act.py")
     os.system("sed -i '12,19d' StyleSwin/op/upfirdn2d.py")
 
@@ -20,7 +19,7 @@ sys.path.insert(0, submodule_dir.as_posix())
 
 from models.generator import Generator
 
-HF_TOKEN = os.environ['HF_TOKEN']
+HF_TOKEN = os.getenv('HF_TOKEN')
 
 
 class Model:
@@ -32,8 +31,9 @@ class Model:
         'FFHQ_1024',
     ]
 
-    def __init__(self, device: str | torch.device):
-        self.device = torch.device(device)
+    def __init__(self):
+        self.device = torch.device(
+            'cuda:0' if torch.cuda.is_available() else 'cpu')
         self._download_all_models()
         self.model_name = self.MODEL_NAMES[3]
         self.model = self._load_model(self.model_name)
