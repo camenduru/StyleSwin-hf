@@ -19,8 +19,6 @@ sys.path.insert(0, submodule_dir.as_posix())
 
 from models.generator import Generator
 
-HF_TOKEN = os.getenv('HF_TOKEN')
-
 
 class Model:
     MODEL_NAMES = [
@@ -52,9 +50,8 @@ class Model:
                           style_dim=512,
                           n_mlp=8,
                           channel_multiplier=channel_multiplier)
-        ckpt_path = huggingface_hub.hf_hub_download('hysts/StyleSwin',
-                                                    f'models/{model_name}.pt',
-                                                    use_auth_token=HF_TOKEN)
+        ckpt_path = huggingface_hub.hf_hub_download('public-data/StyleSwin',
+                                                    f'models/{model_name}.pt')
         ckpt = torch.load(ckpt_path)
         model.load_state_dict(ckpt['g_ema'])
         model.to(self.device)

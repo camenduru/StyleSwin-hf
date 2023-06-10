@@ -7,10 +7,7 @@ import numpy as np
 
 from model import Model
 
-DESCRIPTION = '''# StyleSwin
-
-This is an unofficial demo for [https://github.com/microsoft/StyleSwin](https://github.com/microsoft/StyleSwin).
-'''
+DESCRIPTION = '# [StyleSwin](https://github.com/microsoft/StyleSwin)'
 
 
 def get_sample_image_url(name: str) -> str:
@@ -69,15 +66,12 @@ with gr.Blocks(css='style.css') as demo:
                 text = get_sample_image_markdown(model_name2.value)
                 sample_images = gr.Markdown(text)
 
-    model_name.change(fn=model.set_model, inputs=model_name, outputs=None)
     run_button.click(fn=model.set_model_and_generate_image,
-                     inputs=[
-                         model_name,
-                         seed,
-                     ],
-                     outputs=result)
+                     inputs=[model_name, seed],
+                     outputs=result,
+                     api_name='run')
     model_name2.change(fn=get_sample_image_markdown,
                        inputs=model_name2,
                        outputs=sample_images)
 
-demo.queue().launch(show_api=False)
+demo.queue(max_size=15).launch()
